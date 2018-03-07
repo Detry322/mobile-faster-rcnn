@@ -102,7 +102,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Mobile Faster R-CNN demo')
     parser.add_argument('--net', required=True, help='Network to use [mobile]',
                         choices=['mobile'], default='mobile')
-    parser.add_argument('--checkpoint', required=True, help='Path of the checkpoint,')
+    parser.add_argument('--checkpoint', required=True, help='Path of the checkpoint')
     parser.add_argument('--output', required=True, help='output directory')
     args = parser.parse_args()
 
