@@ -15,8 +15,8 @@ from tensorflow.contrib.slim.python.slim.nets import resnet_utils
 import numpy as np
 from collections import namedtuple
 
-from nets.network import Network
-from model.config import cfg
+from faster_rcnn.lib.nets.network import Network
+from faster_rcnn.lib.model.config import cfg
 
 def separable_conv2d_same(inputs, kernel_size, stride, rate=1, scope=None):
   """Strided 2-D separable convolution with 'SAME' padding.

@@ -16,9 +16,9 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-from model.config import cfg
-from model.test import im_detect
-from model.nms_wrapper import nms
+from faster_rcnn.lib.model.config import cfg
+from faster_rcnn.lib.model.test import im_detect
+from faster_rcnn.lib.model.nms_wrapper import nms
 
 from utils.timer import Timer
 import tensorflow as tf

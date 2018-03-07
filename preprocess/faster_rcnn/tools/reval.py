@@ -13,8 +13,8 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-from model.test import apply_nms
-from model.config import cfg
+from faster_rcnn.lib.model.test import apply_nms
+from faster_rcnn.lib.model.config import cfg
 from datasets.factory import get_imdb
 import pickle
 import os, sys, argparse

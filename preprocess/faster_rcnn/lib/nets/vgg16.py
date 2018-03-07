@@ -14,7 +14,7 @@ from tensorflow.contrib.slim import arg_scope
 import numpy as np
 
 from nets.network import Network
-from model.config import cfg
+from faster_rcnn.lib.model.config import cfg
 
 class vgg16(Network):
   def __init__(self):

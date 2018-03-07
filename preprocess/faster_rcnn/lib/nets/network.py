@@ -14,14 +14,7 @@ from tensorflow.contrib.slim import arg_scope
 
 import numpy as np
 
-from layer_utils.snippets import generate_anchors_pre
-from layer_utils.proposal_layer import proposal_layer
-from layer_utils.proposal_top_layer import proposal_top_layer
-from layer_utils.anchor_target_layer import anchor_target_layer
-from layer_utils.proposal_target_layer import proposal_target_layer
-from utils.visualization import draw_bounding_boxes
-
-from model.config import cfg
+from faster_rcnn.lib.model.config import cfg
 
 class Network(object):
   def __init__(self):
@@ -102,21 +95,36 @@ class Network(object):
 
     return cls_prob, bbox_pred
 
+  def _reshape_layer(self, bottom, num_dim, name):
+    input_shape = tf.shape(bottom)
+    with tf.variable_scope(name) as scope:
+      # change the channel to the caffe format
+      to_caffe = tf.transpose(bottom, [0, 3, 1, 2])
+      # then force it to have channel 2
+      reshaped = tf.reshape(to_caffe,
+                            tf.concat(axis=0, values=[[1, num_dim, -1], [input_shape[2]]]))
+      # then swap the channel back
+      to_tf = tf.transpose(reshaped, [0, 2, 3, 1])
+      return to_tf
+
+  def _softmax_layer(self, bottom, name):
+    if name.startswith('rpn_cls_prob_reshape'):
+      input_shape = tf.shape(bottom)
+      bottom_reshaped = tf.reshape(bottom, [-1, input_shape[-1]])
+      reshaped_score = tf.nn.softmax(bottom_reshaped, name=name)
+      return tf.reshape(reshaped_score, input_shape)
+    return tf.nn.softmax(bottom, name=name)
+
   def _image_to_head(self, is_training, reuse=None):
     raise NotImplementedError
 
   def _head_to_tail(self, pool5, is_training, reuse=None):
     raise NotImplementedError
 
-  def create_architecture(self, mode, num_classes, tag=None,
-                          anchor_scales=(8, 16, 32), anchor_ratios=(0.5, 1, 2)):
-    self._image = tf.placeholder(tf.float32, shape=[1, None, None, 3])
-    self._im_info = tf.placeholder(tf.float32, shape=[3])
-    self._gt_boxes = tf.placeholder(tf.float32, shape=[None, 5])
-    self._tag = tag
+  def create_initial_architecture(self, num_classes, anchor_scales=(8, 16, 32, 64), anchor_ratios=(0.5, 1, 2)):
+    self._image = tf.placeholder(tf.float32, shape=[1, 500, 375, 3])
 
     self._num_classes = num_classes
-    self._mode = mode
     self._anchor_scales = anchor_scales
     self._num_scales = len(anchor_scales)
 
@@ -124,11 +132,6 @@ class Network(object):
     self._num_ratios = len(anchor_ratios)
 
     self._num_anchors = self._num_scales * self._num_ratios
-
-    training = mode == 'TRAIN'
-    testing = mode == 'TEST'
-
-    assert tag != None
 
     # handle most of the regularizers here
     weights_regularizer = tf.contrib.layers.l2_regularizer(cfg.TRAIN.WEIGHT_DECAY)
@@ -143,40 +146,13 @@ class Network(object):
                     weights_regularizer=weights_regularizer,
                     biases_regularizer=biases_regularizer, 
                     biases_initializer=tf.constant_initializer(0.0)): 
-      rois, cls_prob, bbox_pred = self._build_network(training)
+      net_conv, rpn_cls_prob, rpn_bbox_pred = self._build_initial_network()
 
-    layers_to_output = {'rois': rois}
-
-    for var in tf.trainable_variables():
-      self._train_summaries.append(var)
-
-    if testing:
-      stds = np.tile(np.array(cfg.TRAIN.BBOX_NORMALIZE_STDS), (self._num_classes))
-      means = np.tile(np.array(cfg.TRAIN.BBOX_NORMALIZE_MEANS), (self._num_classes))
-      self._predictions["bbox_pred"] *= stds
-      self._predictions["bbox_pred"] += means
-    else:
-      self._add_losses()
-      layers_to_output.update(self._losses)
-
-      val_summaries = []
-      with tf.device("/cpu:0"):
-        val_summaries.append(self._add_gt_image_summary())
-        for key, var in self._event_summaries.items():
-          val_summaries.append(tf.summary.scalar(key, var))
-        for key, var in self._score_summaries.items():
-          self._add_score_summary(key, var)
-        for var in self._act_summaries:
-          self._add_act_summary(var)
-        for var in self._train_summaries:
-          self._add_train_summary(var)
-
-      self._summary_op = tf.summary.merge_all()
-      self._summary_op_val = tf.summary.merge(val_summaries)
-
-    layers_to_output.update(self._predictions)
-
-    return layers_to_output
+    return {
+      'net_conv': net_conv,
+      'rpn_cls_prob': rpn_cls_prob,
+      'rpn_bbox_pred': rpn_bbox_pred
+    }
 
   def get_variables_to_restore(self, variables, var_keep_dic):
     raise NotImplementedError

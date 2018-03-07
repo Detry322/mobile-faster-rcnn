@@ -8,8 +8,8 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-from model.test import test_net
-from model.config import cfg, cfg_from_file, cfg_from_list
+from faster_rcnn.lib.model.test import test_net
+from faster_rcnn.lib.model.config import cfg, cfg_from_file, cfg_from_list
 from datasets.factory import get_imdb
 import argparse
 import pprint

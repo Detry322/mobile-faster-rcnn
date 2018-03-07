@@ -14,8 +14,8 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-from model.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
-from model.train_val import filter_roidb, get_training_roidb
+from faster_rcnn.lib.model.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
+from faster_rcnn.lib.model.train_val import filter_roidb, get_training_roidb
 from datasets.factory import get_imdb
 import datasets.imdb
 import argparse
