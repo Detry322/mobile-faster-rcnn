@@ -46,6 +46,7 @@ class vgg16(Network):
     return net
 
   def _head_to_tail(self, pool5, is_training, reuse=None):
+    raise NotImplementedError
     with tf.variable_scope(self._scope, self._scope, reuse=reuse):
       pool5_flat = slim.flatten(pool5, scope='flatten')
       fc6 = slim.fully_connected(pool5_flat, 4096, scope='fc6')

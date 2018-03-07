@@ -246,7 +246,7 @@ class mobilenetv1(Network):
                               reuse=reuse,
                               scope=self._scope)
       # average pooling done by reduce_mean
-      fc7 = tf.reduce_mean(fc7, axis=[1, 2])
+      # fc7 = tf.reduce_mean(fc7, axis=[1, 2])
     return fc7
 
   def get_variables_to_restore(self, variables, var_keep_dic):
