@@ -49,6 +49,53 @@ def create_initial_graph(sess, net, model_checkpoint_filename, output_dir):
     for i, n in enumerate(map(canonical_name, out_tensors)):
         print(" ==== Output {}: {}".format(i, n))
 
+def create_last_layer_graph(sess, net, model_checkpoint_filename, output_dir):
+    _, name = os.path.split(model_checkpoint_filename)
+    base_output_name = os.path.join(output_dir, name).rstrip('.ckpt') + '-last_layer'
+    names = net.create_last_layer_architecture()
+    saver = tf.train.Saver()
+    print("Restoring initial graph...")
+    saver.restore(sess, model_checkpoint_filename)
+    out_tensors = sorted(names.values(), key=lambda n: n.name)
+    print("Freezing graph...")
+    frozen_graphdef = tf.graph_util.convert_variables_to_constants(
+        sess, sess.graph_def, map(canonical_name, out_tensors))
+    frozen_graphdef_out = base_output_name + '.pb'
+    print("Writing frozen graph...")
+    with open(frozen_graphdef_out, 'w') as f:
+        f.write(frozen_graphdef.SerializeToString())
+    print("Converting to tflite...")
+    tflite_model = tf.contrib.lite.toco_convert(frozen_graphdef, [net._last_layer_input], out_tensors)
+    tflite_model_out = base_output_name + '.tflite'
+    print("Writing tflite model...")
+    with open(tflite_model_out, 'w') as f:
+        f.write(tflite_model)
+    for i, n in enumerate(map(canonical_name, out_tensors)):
+        print(" ==== Output {}: {}".format(i, n))
+
+def create_inference_graph(sess, net, model_checkpoint_filename, output_dir):
+    _, name = os.path.split(model_checkpoint_filename)
+    base_output_name = os.path.join(output_dir, name).rstrip('.ckpt') + '-inference'
+    names = net.create_inference_architecture()
+    saver = tf.train.Saver()
+    print("Restoring initial graph...")
+    saver.restore(sess, model_checkpoint_filename)
+    out_tensors = sorted(names.values(), key=lambda n: n.name)
+    print("Freezing graph...")
+    frozen_graphdef = tf.graph_util.convert_variables_to_constants(
+        sess, sess.graph_def, map(canonical_name, out_tensors))
+    frozen_graphdef_out = base_output_name + '.pb'
+    print("Writing frozen graph...")
+    with open(frozen_graphdef_out, 'w') as f:
+        f.write(frozen_graphdef.SerializeToString())
+    print("Converting to tflite...")
+    tflite_model = tf.contrib.lite.toco_convert(frozen_graphdef, [net._inference_input], out_tensors)
+    tflite_model_out = base_output_name + '.tflite'
+    print("Writing tflite model...")
+    with open(tflite_model_out, 'w') as f:
+        f.write(tflite_model)
+    for i, n in enumerate(map(canonical_name, out_tensors)):
+        print(" ==== Output {}: {}".format(i, n))
 
 def parse_args():
     """Parse input arguments."""
@@ -67,11 +114,18 @@ def get_net(net_name):
     else:
         raise NotImplementedError
 
-def main():
-    args = parse_args()
+def run_func(args, func):
     with tf.Session() as sess:
         net = get_net(args.net)
-        create_initial_graph(sess, net, args.checkpoint, args.output)
+        func(sess, net, args.checkpoint, args.output)
+
+def main():
+    args = parse_args()
+    for func in [create_initial_graph, create_last_layer_graph, create_inference_graph]:
+        try:
+            run_func(args, func)
+        except RuntimeError:
+            print(" --- Something errored...")
 
 if __name__ == '__main__':
     main()

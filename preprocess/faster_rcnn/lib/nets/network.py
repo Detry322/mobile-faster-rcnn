@@ -52,14 +52,20 @@ class Network(object):
     return self._head_to_tail(pool5, is_training=False)
 
   def _build_inference_network(self, fc7):
+    is_training = False
+    if cfg.TRAIN.TRUNCATED:
+      initializer = tf.truncated_normal_initializer(mean=0.0, stddev=0.01)
+      initializer_bbox = tf.truncated_normal_initializer(mean=0.0, stddev=0.001)
+    else:
+      initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
+      initializer_bbox = tf.random_normal_initializer(mean=0.0, stddev=0.001)
     # Run inference network after doing last layer network, and reduce_mean [1, 2].
-    raise NotImplementedError
     with tf.variable_scope(self._scope, self._scope):
       # region classification
       cls_prob, bbox_pred = self._region_classification(fc7, is_training, 
                                                         initializer, initializer_bbox)
 
-    return rois, cls_prob, bbox_pred
+    return cls_prob, bbox_pred
 
   def _region_proposal(self, net_conv, is_training, initializer):
     rpn = slim.conv2d(net_conv, cfg.RPN_CHANNELS, [3, 3], trainable=is_training, weights_initializer=initializer,
@@ -153,6 +159,22 @@ class Network(object):
       'rpn_cls_prob': rpn_cls_prob,
       'rpn_bbox_pred': rpn_bbox_pred
     }
+
+  def create_last_layer_architecture(self):
+    self._last_layer_input = tf.placeholder(tf.float32, shape=[1, cfg.POOLING_SIZE, cfg.POOLING_SIZE, self._before_last_layer_depth])
+    last_layer = self._build_last_layer_network(self._last_layer_input)
+    return {
+      'last_layer': last_layer
+    }
+
+  def create_inference_architecture(self):
+    self._inference_input = tf.placeholder(tf.float32, shape=[1, self._last_layer_depth])
+    cls_prob, bbox_pred = self._build_inference_network(self._inference_input)
+    return {
+      'cls_prob': cls_prob,
+      'bbox_pred': bbox_pred
+    }
+
 
   def get_variables_to_restore(self, variables, var_keep_dic):
     raise NotImplementedError

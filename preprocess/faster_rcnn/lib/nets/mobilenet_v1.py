@@ -209,6 +209,9 @@ class mobilenetv1(Network):
     self._feat_stride = [16, ]
     self._feat_compress = [1. / float(self._feat_stride[0]), ]
     self._depth_multiplier = cfg.MOBILENET.DEPTH_MULTIPLIER
+    self._before_last_layer_depth = 512
+    self._last_layer_depth = 1024
+    self._num_classes = 81
     self._scope = 'MobilenetV1'
 
   def _image_to_head(self, is_training, reuse=None):
