@@ -128,7 +128,7 @@ class Network(object):
     raise NotImplementedError
 
   def create_initial_architecture(self, num_classes, anchor_scales=(8, 16, 32, 64), anchor_ratios=(0.5, 1, 2)):
-    self._image = tf.placeholder(tf.float32, shape=[1, 500, 375, 3])
+    self._image = tf.placeholder(tf.float32, shape=[1, 375, 500, 3])
 
     self._num_classes = num_classes
     self._anchor_scales = anchor_scales

@@ -40,14 +40,14 @@ def create_initial_graph(sess, net, model_checkpoint_filename, output_dir):
     print("Writing frozen graph...")
     with open(frozen_graphdef_out, 'w') as f:
         f.write(frozen_graphdef.SerializeToString())
+    for i, n in enumerate(map(canonical_name, out_tensors)):
+        print(" ==== Output {}: {}".format(i, n))
     print("Converting to tflite...")
     tflite_model = tf.contrib.lite.toco_convert(frozen_graphdef, [net._image], out_tensors)
     tflite_model_out = base_output_name + '.tflite'
     print("Writing tflite model...")
     with open(tflite_model_out, 'w') as f:
         f.write(tflite_model)
-    for i, n in enumerate(map(canonical_name, out_tensors)):
-        print(" ==== Output {}: {}".format(i, n))
 
 def create_last_layer_graph(sess, net, model_checkpoint_filename, output_dir):
     _, name = os.path.split(model_checkpoint_filename)
@@ -64,14 +64,14 @@ def create_last_layer_graph(sess, net, model_checkpoint_filename, output_dir):
     print("Writing frozen graph...")
     with open(frozen_graphdef_out, 'w') as f:
         f.write(frozen_graphdef.SerializeToString())
+    for i, n in enumerate(map(canonical_name, out_tensors)):
+        print(" ==== Output {}: {}".format(i, n))
     print("Converting to tflite...")
     tflite_model = tf.contrib.lite.toco_convert(frozen_graphdef, [net._last_layer_input], out_tensors)
     tflite_model_out = base_output_name + '.tflite'
     print("Writing tflite model...")
     with open(tflite_model_out, 'w') as f:
         f.write(tflite_model)
-    for i, n in enumerate(map(canonical_name, out_tensors)):
-        print(" ==== Output {}: {}".format(i, n))
 
 def create_inference_graph(sess, net, model_checkpoint_filename, output_dir):
     _, name = os.path.split(model_checkpoint_filename)
@@ -88,14 +88,14 @@ def create_inference_graph(sess, net, model_checkpoint_filename, output_dir):
     print("Writing frozen graph...")
     with open(frozen_graphdef_out, 'w') as f:
         f.write(frozen_graphdef.SerializeToString())
+    for i, n in enumerate(map(canonical_name, out_tensors)):
+        print(" ==== Output {}: {}".format(i, n))
     print("Converting to tflite...")
     tflite_model = tf.contrib.lite.toco_convert(frozen_graphdef, [net._inference_input], out_tensors)
     tflite_model_out = base_output_name + '.tflite'
     print("Writing tflite model...")
     with open(tflite_model_out, 'w') as f:
         f.write(tflite_model)
-    for i, n in enumerate(map(canonical_name, out_tensors)):
-        print(" ==== Output {}: {}".format(i, n))
 
 def parse_args():
     """Parse input arguments."""

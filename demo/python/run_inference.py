@@ -13,8 +13,8 @@ def load_image(image_name):
 def parse_args():
     """Parse input arguments."""
     parser = argparse.ArgumentParser(description='Mobile Faster R-CNN python demo')
-    parser.add_argument('--model', required=True, help='Path of the input model trio')
-    parser.add_argument('--image', required=True, help='Path of the input model trio')
+    parser.add_argument('--model', default='../../models/mobile_faster_rcnn_iter_1190000', help='Path of the input model trio')
+    parser.add_argument('--image', default='../../images/004545.jpg', help='Path of the input model trio')
     args = parser.parse_args()
 
     return args

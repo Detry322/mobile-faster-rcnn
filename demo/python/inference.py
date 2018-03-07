@@ -16,7 +16,15 @@ def run_inference(models, image):
 
 def part_1_inference(models, image):
 	# return cls prob, bbox pred, and net_conv
-	return None, None, None
+	initial_model = models['initial']
+	_input = initial_model.get_tensor_by_name('prefix/Placeholder:0')
+	net_conv = initial_model.get_tensor_by_name('prefix/MobilenetV1_1/Conv2d_11_pointwise/Relu6:0')
+	rpn_bbox_pred = initial_model.get_tensor_by_name('prefix/MobilenetV1_2/rpn_bbox_pred/BiasAdd:0')
+	rpn_cls_prob = initial_model.get_tensor_by_name('prefix/MobilenetV1_2/rpn_cls_prob/transpose_1:0')
+	with tf.Session(graph=initial_model) as sess:
+		return sess.run([rpn_cls_prob, rpn_bbox_pred, net_conv], feed_dict={
+            _input: image
+        })
 
 def part_1_get_rois(rpn_cls_prob, rpn_bbox_pred):
 	# return a list of (centerx, centery, width, height) coordinates in normal image coords.
