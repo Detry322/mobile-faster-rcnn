@@ -6,6 +6,10 @@ ROI = namedtuple('ROI', ['cx', 'cy', 'w', 'h'])
 Prediction = namedtuple('Prediction', ['category', 'prob'])
 Result = namedtuple('Result', ['roi', 'prediction'])
 
+ANCHOR_SIZES = (8, 16, 32, 64)
+ANCHOR_RATIOS = (0.5, 1, 2)
+NUM_ANCHORS = len(ANCHOR_SIZES)*len(ANCHOR_RATIOS)
+
 def run_inference(models, image):
 	rpn_cls_prob, rpn_bbox_pred, net_conv = part_1_inference(models, image)
 	rois = part_1_get_rois(rpn_cls_prob, rpn_bbox_pred)
@@ -28,7 +32,10 @@ def part_1_inference(models, image):
 
 def part_1_get_rois(rpn_cls_prob, rpn_bbox_pred):
 	# return a list of (centerx, centery, width, height) coordinates in normal image coords.
-	pass
+	scores = rpn_cls_prob[:, :, :, NUM_ANCHORS:]
+	bounding_box_preds = rpn_bbox_pred.reshape(rpn_bbox_pred.shape[:-1] + (-1, 4))
+	print scores
+	print bounding_box_preds[0, 0, 0]
 
 def part_1_get_top_n_with_nms(rois, n=100):
 	# get top n
