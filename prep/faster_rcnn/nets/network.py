@@ -14,7 +14,7 @@ from tensorflow.contrib.slim import arg_scope
 
 import numpy as np
 
-from faster_rcnn.layer_utils.snippets import generate_anchors_pre
+from faster_rcnn.layer_utils.snippets import generate_anchors_pre, generate_anchors_tf
 from faster_rcnn.layer_utils.proposal_layer import proposal_layer
 from faster_rcnn.layer_utils.proposal_top_layer import proposal_top_layer
 from faster_rcnn.layer_utils.anchor_target_layer import anchor_target_layer
@@ -47,6 +47,7 @@ class Network(object):
     # use a customized visualization function to visualize the boxes
     if self._gt_image is None:
       self._add_gt_image()
+    raise NotImplementedError
     image = tf.py_func(draw_bounding_boxes, 
                       [self._gt_image, self._gt_boxes, self._im_info],
                       tf.float32, name="gt_boxes")
@@ -86,6 +87,7 @@ class Network(object):
 
   def _proposal_top_layer(self, rpn_cls_prob, rpn_bbox_pred, name):
     with tf.variable_scope(name) as scope:
+      raise NotImplementedError
       rois, rpn_scores = tf.py_func(proposal_top_layer,
                                     [rpn_cls_prob, rpn_bbox_pred, self._im_info,
                                      self._feat_stride, self._anchors, self._num_anchors],
@@ -97,6 +99,7 @@ class Network(object):
 
   def _proposal_layer(self, rpn_cls_prob, rpn_bbox_pred, name):
     with tf.variable_scope(name) as scope:
+      raise NotImplementedError
       rois, rpn_scores = tf.py_func(proposal_layer,
                                     [rpn_cls_prob, rpn_bbox_pred, self._im_info, self._mode,
                                      self._feat_stride, self._anchors, self._num_anchors],
@@ -137,6 +140,7 @@ class Network(object):
 
   def _anchor_target_layer(self, rpn_cls_score, name):
     with tf.variable_scope(name) as scope:
+      raise NotImplementedError
       rpn_labels, rpn_bbox_targets, rpn_bbox_inside_weights, rpn_bbox_outside_weights = tf.py_func(
         anchor_target_layer,
         [rpn_cls_score, self._gt_boxes, self._im_info, self._feat_stride, self._anchors, self._num_anchors],
@@ -160,6 +164,7 @@ class Network(object):
 
   def _proposal_target_layer(self, rois, roi_scores, name):
     with tf.variable_scope(name) as scope:
+      raise NotImplementedError
       rois, roi_scores, labels, bbox_targets, bbox_inside_weights, bbox_outside_weights = tf.py_func(
         proposal_target_layer,
         [rois, roi_scores, self._gt_boxes, self._num_classes],
@@ -188,10 +193,8 @@ class Network(object):
       # just to get the shape right
       height = tf.to_int32(tf.ceil(self._im_info[0] / np.float32(self._feat_stride[0])))
       width = tf.to_int32(tf.ceil(self._im_info[1] / np.float32(self._feat_stride[0])))
-      anchors, anchor_length = tf.py_func(generate_anchors_pre,
-                                          [height, width,
-                                           self._feat_stride, self._anchor_scales, self._anchor_ratios],
-                                          [tf.float32, tf.int32], name="generate_anchors")
+      raise NotImplementedError
+      anchors, anchor_length = generate_anchors_tf(height, width, self._feat_stride, self._anchor_scales, self._anchor_ratios)
       anchors.set_shape([None, 4])
       anchor_length.set_shape([])
       self._anchors = anchors
