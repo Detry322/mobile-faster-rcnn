@@ -203,6 +203,7 @@ class Network(object):
       anchors, anchor_length = generate_anchors_tf(height, width, self._feat_stride, self._anchor_scales, self._anchor_ratios)
       anchors.set_shape([None, 4])
       anchor_length.set_shape([])
+      print("Creating anchors...")
       self._anchors = anchors
       self._anchor_length = anchor_length
 
@@ -361,9 +362,8 @@ class Network(object):
 
   def create_architecture(self, mode, num_classes, tag=None,
                           anchor_scales=(8, 16, 32), anchor_ratios=(0.5, 1, 2)):
-    self._image = tf.placeholder(tf.float32, shape=[1, None, None, 3])
-    self._im_info = tf.placeholder(tf.float32, shape=[3])
-    self._gt_boxes = tf.placeholder(tf.float32, shape=[None, 5])
+    self._image = tf.placeholder(tf.float32, shape=[1, None, None, 3], name='image')
+    self._im_info = tf.placeholder(tf.float32, shape=[3], name='im_info')
     self._tag = tag
 
     self._num_classes = num_classes
