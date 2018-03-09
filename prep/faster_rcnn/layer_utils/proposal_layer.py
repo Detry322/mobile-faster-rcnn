@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import numpy as np
 from faster_rcnn.model.config import cfg
-from faster_rcnn.model.bbox_transform import bbox_transform_inv, clip_boxes
+from faster_rcnn.model.bbox_transform import bbox_transform_inv, clip_boxes, bbox_transform_inv_tf, clip_boxes_tf
 from faster_rcnn.model.nms_wrapper import nms
 
 
@@ -50,4 +50,29 @@ def proposal_layer(rpn_cls_prob, rpn_bbox_pred, im_info, cfg_key, _feat_stride, 
   batch_inds = np.zeros((proposals.shape[0], 1), dtype=np.float32)
   blob = np.hstack((batch_inds, proposals.astype(np.float32, copy=False)))
 
+  return blob, scores
+
+def proposal_top_layer_tf(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, anchors, num_anchors):
+  if type(cfg_key) == bytes:
+    cfg_key = cfg_key.decode('utf-8')
+  pre_nms_topN = cfg[cfg_key].RPN_PRE_NMS_TOP_N
+  post_nms_topN = cfg[cfg_key].RPN_POST_NMS_TOP_N
+  nms_thresh = cfg[cfg_key].RPN_NMS_THRESH
+
+  scores = rpn_cls_prob[:, :, :, num_anchors:]
+  scores = tf.reshape(scores, shape=(-1,))
+  rpn_bbox_pred = tf.reshape(rpn_bbox_pred, shape=(-1, 4))
+
+  proposals = bbox_transform_inv_tf(anchors, rpn_bbox_pred)
+  proposals = clip_boxes_tf(proposals, im_info[:2])
+
+  indices = tf.image.non_max_suppression(rpn_bbox_pred, scores, max_output_size=post_nms_topN, iou_threshold=nms_thresh)
+
+  boxes = tf.gather(rpn_bbox_pred, indices)
+  scores = tf.gather(scores, indices)
+  scores = tf.reshape(scores, shape=(-1, 1))
+
+
+  batch_inds = tf.zeros((tf.shape(indices)[0], 1))
+  blob = tf.stack([batch_inds, tf.cast(boxes, dtype=tf.float32)], axis=1)
   return blob, scores
