@@ -12,6 +12,7 @@ from faster_rcnn.model.config import cfg
 from faster_rcnn.model.bbox_transform import bbox_transform_inv, clip_boxes, bbox_transform_inv_tf, clip_boxes_tf
 from faster_rcnn.model.nms_wrapper import nms
 
+import tensorflow as tf
 
 def proposal_layer(rpn_cls_prob, rpn_bbox_pred, im_info, cfg_key, _feat_stride, anchors, num_anchors):
   """A simplified version compared to fast/er RCNN
@@ -52,7 +53,7 @@ def proposal_layer(rpn_cls_prob, rpn_bbox_pred, im_info, cfg_key, _feat_stride, 
 
   return blob, scores
 
-def proposal_top_layer_tf(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, anchors, num_anchors):
+def proposal_layer_tf(rpn_cls_prob, rpn_bbox_pred, im_info, cfg_key, _feat_stride, anchors, num_anchors):
   if type(cfg_key) == bytes:
     cfg_key = cfg_key.decode('utf-8')
   pre_nms_topN = cfg[cfg_key].RPN_PRE_NMS_TOP_N
@@ -69,10 +70,13 @@ def proposal_top_layer_tf(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, an
   indices = tf.image.non_max_suppression(rpn_bbox_pred, scores, max_output_size=post_nms_topN, iou_threshold=nms_thresh)
 
   boxes = tf.gather(rpn_bbox_pred, indices)
+  boxes = tf.to_float(boxes)
   scores = tf.gather(scores, indices)
   scores = tf.reshape(scores, shape=(-1, 1))
 
 
-  batch_inds = tf.zeros((tf.shape(indices)[0], 1))
-  blob = tf.stack([batch_inds, tf.cast(boxes, dtype=tf.float32)], axis=1)
+  batch_inds = tf.zeros((tf.shape(indices)[0], 1), dtype=tf.float32)
+  blob = tf.concat([batch_inds, boxes], 1)
+
+  assert blob.get_shape()[1] == 5
   return blob, scores

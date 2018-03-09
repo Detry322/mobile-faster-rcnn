@@ -65,7 +65,8 @@ def proposal_top_layer_tf(rpn_cls_prob, rpn_bbox_pred, im_info, _feat_stride, an
   top_rpn_bbox = tf.gather(rpn_bbox_pred, top_inds)
   proposals = bbox_transform_inv_tf(top_anchors, top_rpn_bbox)
   proposals = clip_boxes_tf(proposals, im_info[:2])
+  proposals = tf.to_float(proposals)
   batch_inds = tf.zeros((rpn_top_n, 1))
-  blob = tf.stack([batch_inds, tf.cast(proposals, dtype=tf.float32)], axis=1)
+  blob = tf.concat([batch_inds, proposals], 1)
   return blob, top_scores
 
