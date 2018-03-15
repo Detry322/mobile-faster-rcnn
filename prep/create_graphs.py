@@ -16,6 +16,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow.python.tools.optimize_for_inference_lib import optimize_for_inference
 import argparse
 import os
 
@@ -34,15 +35,24 @@ def create_graph(sess, net, model_checkpoint_filename, output_dir):
     print("Restoring initial graph...")
     saver.restore(sess, model_checkpoint_filename)
 
+    in_tensors = [net._image, net._im_info]
     out_tensors = sorted(names.values(), key=lambda n: n.name)
     print("Freezing graph...")
     frozen_graphdef = tf.graph_util.convert_variables_to_constants(
         sess, sess.graph_def, map(canonical_name, out_tensors))
 
+    print("Optimizing")
+    optimized = optimize_for_inference(
+        frozen_graphdef,
+        map(canonical_name, in_tensors),
+        map(canonical_name, out_tensors),
+        tf.float32.as_datatype_enum
+        )
+
     frozen_graphdef_out = base_output_name + '.pb'
     print("Writing frozen graph...")
     with open(frozen_graphdef_out, 'w') as f:
-        f.write(frozen_graphdef.SerializeToString())
+        f.write(optimized.SerializeToString())
     for i, v in enumerate([net._image, net._im_info]):
         print(" ===== Input {}: {}".format(i, v.name)) 
     for i, (k, v) in enumerate(names.items()):
